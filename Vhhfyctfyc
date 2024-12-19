@@ -1,0 +1,659 @@
+-- Enhanced Aurora UI Library
+-- A premium, smooth UI library for Roblox
+local AuroraUI = {}
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+-- Utility Functions
+local function createTween(object, properties, duration, easingStyle, easingDirection)
+    local tween = TweenService:Create(
+        object,
+        TweenInfo.new(
+            duration or 0.3,
+            easingStyle or Enum.EasingStyle.Cubic,
+            easingDirection or Enum.EasingDirection.Out
+        ),
+        properties
+    )
+    return tween
+end
+
+-- Enhanced Theme Configuration
+AuroraUI.Theme = {
+    Primary = Color3.fromRGB(90, 130, 255),
+    PrimaryDark = Color3.fromRGB(70, 110, 235),
+    Secondary = Color3.fromRGB(45, 45, 45),
+    Background = Color3.fromRGB(25, 25, 25),
+    BackgroundLight = Color3.fromRGB(35, 35, 35),
+    Text = Color3.fromRGB(255, 255, 255),
+    TextDark = Color3.fromRGB(200, 200, 200),
+    Success = Color3.fromRGB(85, 255, 127),
+    Error = Color3.fromRGB(255, 85, 85),
+    Corner = UDim.new(0, 8),
+    Font = Enum.Font.GothamBold,
+    FontRegular = Enum.Font.Gotham
+}
+
+-- Create Gradient Effect
+local function createGradient(parent, angle)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200))
+    })
+    gradient.Rotation = angle or 45
+    gradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(1, 0.1)
+    })
+    gradient.Parent = parent
+    return gradient
+end
+
+-- Create Shadow Effect
+local function createShadow(parent)
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "Shadow"
+    shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+    shadow.BackgroundTransparency = 1
+    shadow.Position = UDim2.new(0.5, 0, 0.5, 2)
+    shadow.Size = UDim2.new(1, 6, 1, 6)
+    shadow.ZIndex = parent.ZIndex - 1
+    shadow.Image = "rbxassetid://7912134082"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.6
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(95, 95, 205, 205)
+    shadow.Parent = parent
+    return shadow
+end
+
+-- Create Ripple Effect
+local function createRipple(parent)
+    local ripple = Instance.new("Frame")
+    ripple.Name = "Ripple"
+    ripple.AnchorPoint = Vector2.new(0.5, 0.5)
+    ripple.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ripple.BackgroundTransparency = 0.8
+    ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
+    ripple.Size = UDim2.new(0, 0, 0, 0)
+    
+    local rippleCorner = Instance.new("UICorner")
+    rippleCorner.CornerRadius = UDim.new(1, 0)
+    rippleCorner.Parent = ripple
+    
+    local function startRipple(input)
+        ripple.Position = UDim2.new(0, input.Position.X - parent.AbsolutePosition.X, 0, input.Position.Y - parent.AbsolutePosition.Y)
+        local size = math.max(parent.AbsoluteSize.X, parent.AbsoluteSize.Y) * 1.5
+        
+        createTween(ripple, {
+            Size = UDim2.new(0, size, 0, size),
+            BackgroundTransparency = 1
+        }, 0.5):Play()
+        
+        game.Debris:AddItem(ripple, 0.5)
+    end
+    
+    return startRipple
+end
+
+-- Create Window
+function AuroraUI.CreateWindow(title)
+    local window = {}
+    
+    -- Main GUI
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "AuroraUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    
+    -- Main Frame with Blur Effect
+    local blurEffect = Instance.new("BlurEffect")
+    blurEffect.Size = 10
+    blurEffect.Parent = game.Lighting
+    
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 400, 0, 300)
+    mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+    mainFrame.BackgroundColor3 = AuroraUI.Theme.Background
+    mainFrame.ZIndex = 2
+    mainFrame.Parent = screenGui
+    
+    createShadow(mainFrame)
+    
+    -- Corner and Gradient
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = AuroraUI.Theme.Corner
+    corner.Parent = mainFrame
+    
+    createGradient(mainFrame)
+    
+    -- Title Bar
+    local titleBar = Instance.new("Frame")
+    titleBar.Name = "TitleBar"
+    titleBar.Size = UDim2.new(1, 0, 0, 35)
+    titleBar.BackgroundColor3 = AuroraUI.Theme.Primary
+    titleBar.ZIndex = 3
+    titleBar.Parent = mainFrame
+    
+    createGradient(titleBar, 90)
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = AuroraUI.Theme.Corner
+    titleCorner.Parent = titleBar
+    
+    local titleText = Instance.new("TextLabel")
+    titleText.Name = "Title"
+    titleText.Size = UDim2.new(1, -10, 1, 0)
+    titleText.Position = UDim2.new(0, 10, 0, 0)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = title
+    titleText.TextColor3 = AuroraUI.Theme.Text
+    titleText.Font = AuroraUI.Theme.Font
+    titleText.TextSize = 16
+    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    titleText.ZIndex = 3
+    titleText.Parent = titleBar
+    
+    -- Close Button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 24, 0, 24)
+    closeButton.Position = UDim2.new(1, -29, 0, 5)
+    closeButton.BackgroundColor3 = AuroraUI.Theme.Error
+    closeButton.Text = "×"
+    closeButton.TextColor3 = AuroraUI.Theme.Text
+    closeButton.Font = AuroraUI.Theme.Font
+    closeButton.TextSize = 20
+    closeButton.ZIndex = 3
+    closeButton.Parent = titleBar
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 6)
+    closeCorner.Parent = closeButton
+    
+    closeButton.MouseEnter:Connect(function()
+        createTween(closeButton, {
+            BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+        }):Play()
+    end)
+    
+    closeButton.MouseLeave:Connect(function()
+        createTween(closeButton, {
+            BackgroundColor3 = AuroraUI.Theme.Error
+        }):Play()
+    end)
+    
+    closeButton.MouseButton1Click:Connect(function()
+        createTween(mainFrame, {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            BackgroundTransparency = 1
+        }, 0.3):Play()
+        wait(0.3)
+        screenGui:Destroy()
+        blurEffect:Destroy()
+    end)
+    
+    -- Content Frame with Smooth Scrolling
+    local contentFrame = Instance.new("ScrollingFrame")
+    contentFrame.Name = "Content"
+    contentFrame.Size = UDim2.new(1, -20, 1, -45)
+    contentFrame.Position = UDim2.new(0, 10, 0, 40)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.ScrollBarThickness = 3
+    contentFrame.ScrollBarImageColor3 = AuroraUI.Theme.Primary
+    contentFrame.ZIndex = 2
+    contentFrame.Parent = mainFrame
+    
+    -- Smooth Scrolling
+    local function smoothScroll(input)
+        local scrollSpeed = 0.1
+        local targetPosition = contentFrame.CanvasPosition
+        
+        if input.UserInputType == Enum.UserInputType.MouseWheel then
+            targetPosition = Vector2.new(
+                targetPosition.X,
+                targetPosition.Y - (input.Position.Z * 40)
+            )
+            
+            createTween(contentFrame, {
+                CanvasPosition = targetPosition
+            }, scrollSpeed, Enum.EasingStyle.Cubic):Play()
+        end
+    end
+    
+    contentFrame.InputChanged:Connect(smoothScroll)
+    
+    -- Layout
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 8)
+    layout.Parent = contentFrame
+    
+    -- Auto-size content frame
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        contentFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
+    end)
+    
+    -- Make window draggable with smooth animation
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function updateDrag(input)
+        if dragging and input then
+            local delta = input.Position - dragStart
+            local targetPosition = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+            
+            createTween(mainFrame, {
+                Position = targetPosition
+            }, 0.1, Enum.EasingStyle.Cubic):Play()
+        end
+    end
+    
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+            updateDrag(dragInput)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    -- Enhanced Button Creation
+    function window:AddButton(text, callback)
+        local buttonFrame = Instance.new("Frame")
+        buttonFrame.Name = "ButtonFrame"
+        buttonFrame.Size = UDim2.new(1, 0, 0, 38)
+        buttonFrame.BackgroundColor3 = AuroraUI.Theme.Secondary
+        buttonFrame.ZIndex = 2
+        buttonFrame.Parent = contentFrame
+        
+        createGradient(buttonFrame)
+        createShadow(buttonFrame)
+        
+        local buttonCorner = Instance.new("UICorner")
+        buttonCorner.CornerRadius = AuroraUI.Theme.Corner
+        buttonCorner.Parent = buttonFrame
+        
+        local button = Instance.new("TextButton")
+        button.Name = "Button"
+        button.Size = UDim2.new(1, 0, 1, 0)
+        button.BackgroundTransparency = 1
+        button.Text = text
+        button.TextColor3 = AuroraUI.Theme.Text
+        button.Font = AuroraUI.Theme.Font
+        button.TextSize = 14
+        button.ZIndex = 3
+        button.Parent = buttonFrame
+        
+        local startRipple = createRipple(buttonFrame)
+        
+        -- Hover and Click Effects
+        button.MouseEnter:Connect(function()
+            createTween(buttonFrame, {
+                BackgroundColor3 = AuroraUI.Theme.Primary
+            }, 0.2):Play()
+        end)
+        
+        button.MouseLeave:Connect(function()
+            createTween(buttonFrame, {
+                BackgroundColor3 = AuroraUI.Theme.Secondary
+            }, 0.2):Play()
+        end)
+        
+        button.MouseButton1Down:Connect(function(input)
+            createTween(buttonFrame, {
+                Size = UDim2.new(1, 0, 0, 36)
+            }, 0.1):Play()
+            startRipple(input)
+        end)
+        
+        button.MouseButton1Up:Connect(function()
+            createTween(buttonFrame, {
+                Size = UDim2.new(1, 0, 0, 38)
+            }, 0.1):Play()
+            
+            if callback then
+                callback()
+            end
+        end)
+        
+        return buttonFrame
+    end
+    
+    -- Enhanced Toggle Creation
+    function window:AddToggle(text, default, callback)
+        local toggleFrame = Instance.new("Frame")
+        toggleFrame.Name = "Toggle"
+        toggleFrame.Size = UDim2.new(1, 0, 0, 38)
+        toggleFrame.BackgroundColor3 = AuroraUI.Theme.Secondary
+        toggleFrame.ZIndex = 2
+        toggleFrame.Parent = contentFrame
+        
+        createGradient(toggleFrame)
+        createShadow(toggleFrame)
+        
+        local toggleCorner = Instance.new("UICorner")
+        toggleCorner.CornerRadius = AuroraUI.Theme.Corner
+        toggleCorner.Parent = toggleFrame
+        
+        local toggleText = Instance.new("TextLabel")
+        toggleText.Size = UDim2.new(1, -60, 1, 0)
+        toggleText.Position = UDim2.new(0, 10, 0, 0)
+        toggleText.BackgroundTransparency = 1
+        toggleText.Text = text
+        toggleText.TextColor3 = AuroraUI.Theme.Text
+        toggleText.Font = AuroraUI.Theme.Font
+        toggleText.TextSize = 14
+        toggleText.TextXAlignment = Enum.TextXAlignment.Left
+        toggleText.ZIndex = 3
+        toggleText.Parent = toggleFrame
+        
+        local toggleButton = Instance.new("Frame")
+        toggleButton.Size = UDim2.new(0, 44, 0, 24)
+        toggleButton.Position = UDim2.new(1, -54, 0.5, -12)
+        toggleButton.BackgroundColor3 = default and AuroraUI.Theme.Success or AuroraUI.Theme.Error
+        toggleButton.ZIndex = 3
+        toggleButton.Parent = toggleFrame
+        
+        local toggleButtonCorner = Instance.new("UICorner")
+        toggleButtonCorner.CornerRadius = UDim.new(1, 0)
+        toggleButtonCorner.Parent = toggleButton
+        
+        local toggleCircle = Instance.new("Frame")
+        toggleCircle.Size = UDim2.new(0, 20, 0, 20)
+        toggleCircle.Position = default and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)
+        toggleCircle.BackgroundColor3 = AuroraUI.Theme.Text
+        toggleCircle.ZIndex = 3
+        toggleCircle.Parent = toggleButton
+        
+        createShadow(toggleCircle)
+        
+        local toggleCircleCorner = Instance.new("UICorner")
+        toggleCircleCorner.CornerRadius = UDim.new(1, 0)
+        toggleCircleCorner.Parent = toggleCircle
+        
+        local toggled = default or false
+        local isAnimating = false
+        
+        local function updateToggle()
+            if isAnimating then return end
+            isAnimating = true
+            
+            local targetColor = toggled and AuroraUI.Theme.Success or AuroraUI.Theme.Error
+            local targetPosition = toggled and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)
+            
+            createTween(toggleButton, {
+                BackgroundColor3 = targetColor
+            }, 0.3):Play()
+            
+            createTween(toggleCircle, {
+                Position = targetPosition
+            }, 0.3):Play()
+            
+            if callback then
+                callback(toggled)
+            end
+            
+            wait(0.3)
+            isAnimating = false
+        end
+        
+        toggleButton.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                toggled = not toggled
+                updateToggle()
+            end
+        end)
+        
+        -- Enhanced Slider Creation
+        function window:AddSlider(text, min, max, default, callback)
+            local sliderFrame = Instance.new("Frame")
+            sliderFrame.Name = "Slider"
+            sliderFrame.Size = UDim2.new(1, 0, 0, 50)
+            sliderFrame.BackgroundColor3 = AuroraUI.Theme.Secondary
+            sliderFrame.ZIndex = 2
+            sliderFrame.Parent = contentFrame
+            
+            createGradient(sliderFrame)
+            createShadow(sliderFrame)
+            
+            local sliderCorner = Instance.new("UICorner")
+            sliderCorner.CornerRadius = AuroraUI.Theme.Corner
+            sliderCorner.Parent = sliderFrame
+            
+            local sliderText = Instance.new("TextLabel")
+            sliderText.Size = UDim2.new(1, -100, 0, 20)
+            sliderText.Position = UDim2.new(0, 10, 0, 5)
+            sliderText.BackgroundTransparency = 1
+            sliderText.Text = text
+            sliderText.TextColor3 = AuroraUI.Theme.Text
+            sliderText.Font = AuroraUI.Theme.Font
+            sliderText.TextSize = 14
+            sliderText.TextXAlignment = Enum.TextXAlignment.Left
+            sliderText.ZIndex = 3
+            sliderText.Parent = sliderFrame
+            
+            local valueText = Instance.new("TextLabel")
+            valueText.Size = UDim2.new(0, 50, 0, 20)
+            valueText.Position = UDim2.new(1, -60, 0, 5)
+            valueText.BackgroundTransparency = 1
+            valueText.Text = tostring(default)
+            valueText.TextColor3 = AuroraUI.Theme.Primary
+            valueText.Font = AuroraUI.Theme.Font
+            valueText.TextSize = 14
+            valueText.TextXAlignment = Enum.TextXAlignment.Right
+            valueText.ZIndex = 3
+            valueText.Parent = sliderFrame
+            
+            local sliderBar = Instance.new("Frame")
+            sliderBar.Size = UDim2.new(1, -20, 0, 4)
+            sliderBar.Position = UDim2.new(0, 10, 0, 35)
+            sliderBar.BackgroundColor3 = AuroraUI.Theme.BackgroundLight
+            sliderBar.ZIndex = 3
+            sliderBar.Parent = sliderFrame
+            
+            local sliderBarCorner = Instance.new("UICorner")
+            sliderBarCorner.CornerRadius = UDim.new(1, 0)
+            sliderBarCorner.Parent = sliderBar
+            
+            local sliderFill = Instance.new("Frame")
+            sliderFill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
+            sliderFill.BackgroundColor3 = AuroraUI.Theme.Primary
+            sliderFill.ZIndex = 3
+            sliderFill.Parent = sliderBar
+            
+            local sliderFillCorner = Instance.new("UICorner")
+            sliderFillCorner.CornerRadius = UDim.new(1, 0)
+            sliderFillCorner.Parent = sliderFill
+            
+            local sliderKnob = Instance.new("Frame")
+            sliderKnob.Size = UDim2.new(0, 16, 0, 16)
+            sliderKnob.Position = UDim2.new((default - min)/(max - min), -8, 0.5, -8)
+            sliderKnob.BackgroundColor3 = AuroraUI.Theme.Primary
+            sliderKnob.ZIndex = 4
+            sliderKnob.Parent = sliderBar
+            
+            createShadow(sliderKnob)
+            
+            local sliderKnobCorner = Instance.new("UICorner")
+            sliderKnobCorner.CornerRadius = UDim.new(1, 0)
+            sliderKnobCorner.Parent = sliderKnob
+            
+            local dragging = false
+            
+            local function updateSlider(input)
+                local pos = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
+                local value = math.floor(min + ((max - min) * pos))
+                
+                createTween(sliderFill, {
+                    Size = UDim2.new(pos, 0, 1, 0)
+                }, 0.1):Play()
+                
+                createTween(sliderKnob, {
+                    Position = UDim2.new(pos, -8, 0.5, -8)
+                }, 0.1):Play()
+                
+                valueText.Text = tostring(value)
+                
+                if callback then
+                    callback(value)
+                end
+            end
+            
+            sliderBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                    updateSlider(input)
+                end
+            end)
+            
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    updateSlider(input)
+                end
+            end)
+            
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+            
+            return sliderFrame
+        end
+        
+        -- Enhanced Dropdown Creation
+        function window:AddDropdown(text, options, callback)
+            local dropdownFrame = Instance.new("Frame")
+            dropdownFrame.Name = "Dropdown"
+            dropdownFrame.Size = UDim2.new(1, 0, 0, 38)
+            dropdownFrame.BackgroundColor3 = AuroraUI.Theme.Secondary
+            dropdownFrame.ZIndex = 2
+            dropdownFrame.Parent = contentFrame
+            
+            createGradient(dropdownFrame)
+            createShadow(dropdownFrame)
+            
+            local dropdownCorner = Instance.new("UICorner")
+            dropdownCorner.CornerRadius = AuroraUI.Theme.Corner
+            dropdownCorner.Parent = dropdownFrame
+            
+            local dropdownButton = Instance.new("TextButton")
+            dropdownButton.Name = "DropdownButton"
+            dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+            dropdownButton.BackgroundTransparency = 1
+            dropdownButton.Text = text
+            dropdownButton.TextColor3 = AuroraUI.Theme.Text
+            dropdownButton.Font = AuroraUI.Theme.Font
+            dropdownButton.TextSize = 14
+            dropdownButton.ZIndex = 3
+            dropdownButton.Parent = dropdownFrame
+            
+            local optionsFrame = Instance.new("Frame")
+            optionsFrame.Name = "Options"
+            optionsFrame.Size = UDim2.new(1, 0, 0, 0)
+            optionsFrame.Position = UDim2.new(0, 0, 1, 5)
+            optionsFrame.BackgroundColor3 = AuroraUI.Theme.Secondary
+            optionsFrame.Visible = false
+            optionsFrame.ZIndex = 5
+            optionsFrame.Parent = dropdownFrame
+            
+            createShadow(optionsFrame)
+            
+            local optionsCorner = Instance.new("UICorner")
+            optionsCorner.CornerRadius = AuroraUI.Theme.Corner
+            optionsCorner.Parent = optionsFrame
+            
+            local optionsList = Instance.new("UIListLayout")
+            optionsList.Padding = UDim.new(0, 2)
+            optionsList.Parent = optionsFrame
+            
+            local isOpen = false
+            
+            local function toggleDropdown()
+                isOpen = not isOpen
+                local targetSize = isOpen and UDim2.new(1, 0, 0, #options * 30 + (#options - 1) * 2) or UDim2.new(1, 0, 0, 0)
+                
+                if isOpen then
+                    optionsFrame.Visible = true
+                    createTween(optionsFrame, {
+                        Size = targetSize
+                    }, 0.3):Play()
+                else
+                    createTween(optionsFrame, {
+                        Size = targetSize
+                    }, 0.3):Play()
+                    wait(0.3)
+                    optionsFrame.Visible = false
+                end
+            end
+            
+            dropdownButton.MouseButton1Click:Connect(toggleDropdown)
+            
+            for i, option in ipairs(options) do
+                local optionButton = Instance.new("TextButton")
+                optionButton.Name = option
+                optionButton.Size = UDim2.new(1, 0, 0, 30)
+                optionButton.BackgroundColor3 = AuroraUI.Theme.BackgroundLight
+                optionButton.Text = option
+                optionButton.TextColor3 = AuroraUI.Theme.Text
+                optionButton.Font = AuroraUI.Theme.FontRegular
+                optionButton.TextSize = 14
+                optionButton.ZIndex = 5
+                optionButton.Parent = optionsFrame
+                
+                local optionCorner = Instance.new("UICorner")
+                optionCorner.CornerRadius = UDim.new(0, 6)
+                optionCorner.Parent = optionButton
+                
+                optionButton.MouseEnter:Connect(function()
+                    createTween(optionButton, {
+                        BackgroundColor3 = AuroraUI.Theme.Primary
+                    }, 0.2):Play()
+                end)
+                
+                optionButton.MouseLeave:Connect(function()
+                    createTween(optionButton, {
+                        BackgroundColor3 = AuroraUI.Theme.BackgroundLight
+                    }, 0.2):Play()
+                end)
+                
+                optionButton.MouseButton1Click:Connect(function()
+                    dropdownButton.Text = text .. ": " .. option
+                    toggleDropdown()
+                    if callback then
+                        callback(option)
+                    end
+                end)
+            end
+            
+            return dropdownFrame
+        end
+    end
+    
+    return window
+end
+
+return AuroraUI
